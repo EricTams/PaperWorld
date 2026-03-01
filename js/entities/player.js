@@ -1,3 +1,7 @@
+import { createAnimationState, updateAnimation, getCurrentFrame } from "../render/sprite/animation-state.js";
+import { PLAYER_ANIMATIONS } from "../render/sprite/animation-defs.js";
+import { drawSprite } from "../render/sprite/sprite-renderer.js";
+
 export function createPlayer(startX, startY) {
   return {
     x: startX,
@@ -6,6 +10,7 @@ export function createPlayer(startX, startY) {
     collisionRadius: 14,
     speed: 132,
     facing: { x: 1, y: 0 },
+    anim: createAnimationState(),
   };
 }
 
@@ -16,12 +21,45 @@ export function updatePlayerMovement(player, inputAxis, dtSeconds) {
   updateFacing(player, move);
 }
 
-export function drawPlayer(ctx, camera, player, worldToScreen, worldLengthToScreen) {
-  const half = player.size * 0.5;
+export function updatePlayerAnimation(player, inputAxis, dtSeconds) {
+  const animName = resolvePlayerAnimation(inputAxis);
+  player.anim.flipX = player.facing.x < 0;
+  updateAnimation(player.anim, animName, dtSeconds, PLAYER_ANIMATIONS);
+}
+
+export function drawPlayer(ctx, camera, player, worldToScreen, worldLengthToScreen, atlas) {
+  const worldSize = player.size;
+
+  if (atlas) {
+    const frameName = getCurrentFrame(player.anim, PLAYER_ANIMATIONS);
+    const region = frameName ? atlas.frames.get(frameName) : null;
+    if (region) {
+      const aspect = region.width / region.height;
+      const drawW = worldSize;
+      const drawH = worldSize / aspect;
+      const halfW = drawW * 0.5;
+      const halfH = drawH * 0.5;
+      const topLeft = worldToScreen(camera, player.x - halfW, player.y - halfH);
+      const screenW = worldLengthToScreen(camera, drawW);
+      const screenH = worldLengthToScreen(camera, drawH);
+      if (drawSprite(ctx, atlas, frameName, topLeft.x, topLeft.y, screenW, screenH, player.anim.flipX)) {
+        return;
+      }
+    }
+  }
+
+  const half = worldSize * 0.5;
   const topLeft = worldToScreen(camera, player.x - half, player.y - half);
-  const size = worldLengthToScreen(camera, player.size);
+  const size = worldLengthToScreen(camera, worldSize);
   ctx.fillStyle = "#d64545";
   ctx.fillRect(topLeft.x, topLeft.y, size, size);
+}
+
+function resolvePlayerAnimation(inputAxis) {
+  if (inputAxis.x !== 0 || inputAxis.y !== 0) {
+    return "walk";
+  }
+  return "idle";
 }
 
 export function clampPlayerToBounds(player, bounds) {

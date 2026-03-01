@@ -11,8 +11,10 @@ import {
 import {
   createPlayer,
   updatePlayerMovement,
+  updatePlayerAnimation,
   drawPlayer,
 } from "./entities/player.js";
+import { loadAtlas } from "./render/sprite/atlas-loader.js";
 import {
   createCamera,
   resizeCamera,
@@ -36,6 +38,7 @@ import { drawGroundLayer, drawChunkGridOverlay } from "./render/layers/ground-la
 import { drawDecorNonBlockingLayer } from "./render/layers/decor/nonblocking-layer.js";
 import { drawDecorBlockingLayer } from "./render/layers/decor/blocking-layer.js";
 import { resolvePlayerBlockingCollision, drawCollisionDebugOverlay } from "./sim/collision.js";
+import { createEnemySpawner, updateEnemySpawner, drawEnemies } from "./entities/enemy-spawner.js";
 
 const FIXED_DT_SECONDS = 1 / 60;
 const MAX_FRAME_SECONDS = 0.25;
@@ -91,6 +94,9 @@ function createGameState() {
       collisionOverlayEnabled: false,
     },
     lastCachedZoom: 0,
+    playerAtlas: null,
+    enemyAtlas: null,
+    enemySpawner: createEnemySpawner(),
   };
 }
 
@@ -102,6 +108,12 @@ function initGame(state) {
   validateBiomeDefinitionCount();
   resizeCanvas(state);
   window.addEventListener("resize", () => resizeCanvas(state));
+  loadAtlas("assets/player/alienPink.xml", "assets/player/alienPink.png").then((atlas) => {
+    state.playerAtlas = atlas;
+  });
+  loadAtlas("assets/enemies/enemies.xml", "assets/enemies/enemies.png").then((atlas) => {
+    state.enemyAtlas = atlas;
+  });
   console.log("AIDEV-NOTE: Initial game state", state);
 }
 
@@ -174,7 +186,9 @@ function simulate(state, axis, dtSeconds) {
   const previousPosition = { x: state.player.x, y: state.player.y };
   updatePlayerMovement(state.player, axis, dtSeconds);
   resolvePlayerBlockingCollision(state.player, previousPosition, state.world.loadedChunks);
+  updatePlayerAnimation(state.player, axis, dtSeconds);
   updateCameraFollow(state.camera, state.player.x, state.player.y);
+  updateEnemySpawner(state.enemySpawner, state.camera, state.player, state.world.loadedChunks, dtSeconds);
   updateWorldStreaming(state);
 }
 
@@ -189,7 +203,8 @@ function render(state) {
   if (state.debug.chunkGridEnabled) {
     drawChunkGridOverlay(state.ctx, state.camera, state.world.loadedChunks, state.world.chunkSize);
   }
-  drawPlayer(state.ctx, state.camera, state.player, worldToScreen, worldLengthToScreen);
+  drawEnemies(state.ctx, state.camera, state.enemySpawner, worldToScreen, worldLengthToScreen, state.enemyAtlas);
+  drawPlayer(state.ctx, state.camera, state.player, worldToScreen, worldLengthToScreen, state.playerAtlas);
   drawDecorBlockingLayer(state.ctx, state.camera, state.world.loadedChunks, state.world.chunkSize);
   if (state.debug.collisionOverlayEnabled) {
     drawCollisionDebugOverlay(

@@ -62,7 +62,7 @@ function resolveCircleMovement(previousPosition, movement, playerRadius, collide
   return resolvedSlide;
 }
 
-function collectBlockingCircleColliders(chunks) {
+export function collectBlockingCircleColliders(chunks) {
   const colliders = [];
   chunks.forEach((chunk) => appendChunkBlockingColliders(colliders, chunk));
   return colliders;
@@ -113,7 +113,7 @@ function toCircleCollider(instance) {
   };
 }
 
-function isCollidingAt(playerX, playerY, radius, colliders) {
+export function isCollidingAt(playerX, playerY, radius, colliders) {
   for (let i = 0; i < colliders.length; i += 1) {
     if (intersectsCircleCircle(playerX, playerY, radius, colliders[i])) {
       return true;
@@ -156,7 +156,7 @@ function projectMovementToTangent(movement, normal) {
   };
 }
 
-function separateFromColliders(position, radius, colliders) {
+export function separateFromColliders(position, radius, colliders) {
   const resolved = { x: position.x, y: position.y };
   for (let pass = 0; pass < MAX_SEPARATION_PASSES; pass += 1) {
     let adjusted = false;
