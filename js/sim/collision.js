@@ -4,8 +4,13 @@ const HEAD_ON_APPROACH_THRESHOLD = 0.9;
 const MAX_SEPARATION_PASSES = 4;
 const SEPARATION_EPSILON = 0.001;
 
-export function resolvePlayerBlockingCollision(player, previousPosition, chunks) {
+export function resolvePlayerBlockingCollision(player, previousPosition, chunks, extraColliders) {
   const colliders = collectBlockingCircleColliders(chunks);
+  if (extraColliders) {
+    for (let i = 0; i < extraColliders.length; i += 1) {
+      colliders.push(extraColliders[i]);
+    }
+  }
   const movement = {
     x: player.x - previousPosition.x,
     y: player.y - previousPosition.y,
@@ -15,8 +20,13 @@ export function resolvePlayerBlockingCollision(player, previousPosition, chunks)
   player.y = resolved.y;
 }
 
-export function drawCollisionDebugOverlay(ctx, camera, worldToScreen, worldLengthToScreen, player, chunks) {
+export function drawCollisionDebugOverlay(ctx, camera, worldToScreen, worldLengthToScreen, player, chunks, extraColliders) {
   const colliders = collectBlockingCircleColliders(chunks);
+  if (extraColliders) {
+    for (let i = 0; i < extraColliders.length; i += 1) {
+      colliders.push(extraColliders[i]);
+    }
+  }
   drawBlockingColliders(ctx, camera, worldToScreen, worldLengthToScreen, colliders);
   drawPlayerCollisionBody(ctx, camera, worldToScreen, worldLengthToScreen, player);
 }

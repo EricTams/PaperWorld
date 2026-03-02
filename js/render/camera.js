@@ -37,6 +37,13 @@ export function worldLengthToScreen(camera, worldLength) {
   return worldLength * camera.zoom;
 }
 
+export function screenToWorld(camera, screenX, screenY) {
+  return {
+    x: (screenX - camera.viewWidth * 0.5) / camera.zoom + camera.x,
+    y: (screenY - camera.viewHeight * 0.5) / camera.zoom + camera.y,
+  };
+}
+
 export function getVisibleWorldBounds(camera) {
   const halfW = camera.viewWidth / (2 * camera.zoom);
   const halfH = camera.viewHeight / (2 * camera.zoom);
