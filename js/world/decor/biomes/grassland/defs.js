@@ -48,28 +48,43 @@ export const GRASSLAND_DECOR_DEFS = Object.freeze([
     color: "#4e8e40",
   },
   {
-    id: "grassland-boulder",
-    biomeId: "grassland",
-    blocking: true,
-    footprint: { kind: "circle", radius: 32 },
-    placement: {
-      radius: 54,
-      clearance: 22,
-    },
-    shape: "boulder",
-    color: "#8a8f98",
-  },
-  {
-    id: "grassland-stump",
+    id: "grassland-stone",
     biomeId: "grassland",
     blocking: false,
-    footprint: { kind: "circle", radius: 12 },
+    footprint: { kind: "circle", radius: 10 },
     placement: {
-      radius: 16,
-      clearance: 4,
+      radius: 14,
+      clearance: 3,
     },
-    shape: "stump",
-    color: "#8f5e3c",
+    shape: "ground-stone",
+    color: "#8a8f98",
+    pickup: { itemId: "stone", count: 1, label: "Stone" },
+  },
+  {
+    id: "grassland-stick",
+    biomeId: "grassland",
+    blocking: false,
+    footprint: { kind: "circle", radius: 8 },
+    placement: {
+      radius: 12,
+      clearance: 3,
+    },
+    shape: "ground-stick",
+    color: "#8f6b3c",
+    pickup: { itemId: "stick", count: 1, label: "Stick" },
+  },
+  {
+    id: "grassland-herb",
+    biomeId: "grassland",
+    blocking: false,
+    footprint: { kind: "circle", radius: 8 },
+    placement: {
+      radius: 12,
+      clearance: 2,
+    },
+    shape: "ground-herb",
+    color: "#4f9a42",
+    pickup: { itemId: "herb", count: 1, label: "Herb", requiredTool: "stone-knife" },
   },
 ]);
 
@@ -79,18 +94,19 @@ const NON_BLOCKING_DECOR_IDS = Object.freeze([
   "grassland-tall-grass",
   "grassland-bush",
   "grassland-bush",
-  "grassland-stump",
-  "grassland-stump",
+  "grassland-stick",
+  "grassland-stick",
+  "grassland-stone",
+  "grassland-herb",
+  "grassland-herb",
 ]);
 
-const BLOCKING_DECOR_IDS = Object.freeze([
-  "grassland-boulder",
-]);
+const BLOCKING_DECOR_IDS = Object.freeze([]);
 
 export const GRASSLAND_DECOR_CONFIG = Object.freeze({
   biomeId: "grassland",
   nonBlockingDecorIds: NON_BLOCKING_DECOR_IDS,
   blockingDecorIds: BLOCKING_DECOR_IDS,
   blockingCellStep: 66,
-  blockingMinCount: 1,
+  blockingMinCount: 0,
 });

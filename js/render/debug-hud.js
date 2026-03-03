@@ -47,6 +47,8 @@ export function drawDebugHud(ctx, hudState) {
   ctx.fillRect(16, 16, width, height);
   ctx.fillStyle = HUD_TEXT_COLOR;
   ctx.font = HUD_FONT;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
   lines.forEach((line, index) => {
     const x = 16 + HUD_PADDING;
     const y = 16 + HUD_PADDING + (index + 1) * HUD_LINE_HEIGHT - 4;

@@ -82,6 +82,20 @@ export const DECIDUOUS_FOREST_DECOR_DEFS = Object.freeze([
     },
     shape: "hollow-log",
     color: "#6d4a31",
+    pickup: { itemId: "stick", count: 2, label: "Wood" },
+  },
+  {
+    id: "deciduous-forest-herb",
+    biomeId: "deciduous-forest",
+    blocking: false,
+    footprint: { kind: "circle", radius: 8 },
+    placement: {
+      radius: 12,
+      clearance: 2,
+    },
+    shape: "ground-herb",
+    color: "#4a8a3a",
+    pickup: { itemId: "herb", count: 1, label: "Herb", requiredTool: "stone-knife" },
   },
 ]);
 
@@ -93,6 +107,7 @@ const NON_BLOCKING_DECOR_IDS = Object.freeze([
   "deciduous-forest-bramble",
   "deciduous-forest-shrub",
   "deciduous-forest-hollow-log",
+  "deciduous-forest-herb",
 ]);
 
 const BLOCKING_DECOR_IDS = Object.freeze([

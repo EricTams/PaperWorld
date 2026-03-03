@@ -15,7 +15,7 @@ const BIOME_GROUND_DEFS = Object.freeze([
       patchRadiusMax: 76,
     }),
     overlay: Object.freeze({
-      color: "#5a904b",
+      color: "#4a7f3c",
       depthOffset: 1,
       patternId: "clover",
       patternAlpha: 0.2,

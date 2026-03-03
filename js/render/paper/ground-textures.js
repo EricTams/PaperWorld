@@ -153,9 +153,9 @@ function drawGrasslandUnderlay(ctx, s) {
 }
 
 function drawGrasslandOverlay(ctx, s) {
-  ctx.fillStyle = "#5a904b";
+  ctx.fillStyle = "#4a7f3c";
   ctx.fillRect(0, 0, s, s);
-  ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+  ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
   for (let i = 0; i < 10; i += 1) {
     const x = ((i * 23) + 9) % s;
     const y = ((i * 19) + 5) % s;

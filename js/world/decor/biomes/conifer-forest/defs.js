@@ -58,6 +58,7 @@ export const CONIFER_FOREST_DECOR_DEFS = Object.freeze([
     },
     shape: "fallen-log",
     color: "#6d4a31",
+    pickup: { itemId: "stick", count: 2, label: "Wood" },
   },
   {
     id: "conifer-forest-stump",
@@ -70,6 +71,7 @@ export const CONIFER_FOREST_DECOR_DEFS = Object.freeze([
     },
     shape: "stump",
     color: "#7f5738",
+    pickup: { itemId: "stick", count: 1, label: "Wood" },
   },
   {
     id: "conifer-forest-boulder",

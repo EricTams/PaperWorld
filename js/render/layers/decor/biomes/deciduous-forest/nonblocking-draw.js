@@ -61,7 +61,47 @@ export function drawDeciduousForestNonBlockingDecor(ctx, camera, worldLengthToSc
     drawHollowLog(ctx, camera, worldLengthToScreen, position.x, position.y, decorDef.color, footprintRadius);
     return;
   }
+  if (decorDef.shape === "ground-herb") {
+    drawGroundHerb(ctx, camera, worldLengthToScreen, position.x, position.y, decorDef.color);
+    return;
+  }
   throw new Error(`Unsupported deciduous-forest non-blocking shape "${decorDef.shape}".`);
+}
+
+function drawGroundHerb(ctx, camera, worldLengthToScreen, x, y, color) {
+  const stemW = worldLengthToScreen(camera, 1);
+  const stemH = worldLengthToScreen(camera, 10);
+  const leafRx = worldLengthToScreen(camera, 5);
+  const leafRy = worldLengthToScreen(camera, 3);
+  const stemTop = y - stemH * 0.5;
+  const shadowOffsetX = worldLengthToScreen(camera, PAPER_SHADOW_OFFSET_X);
+  const shadowOffsetY = worldLengthToScreen(camera, PAPER_SHADOW_OFFSET_Y);
+
+  ctx.fillStyle = PAPER_SHADOW_COLOR;
+  ctx.fillRect(x - stemW + shadowOffsetX, stemTop + shadowOffsetY, stemW * 2, stemH);
+  fillPaperShape(ctx, camera, "#5a7a3a", PAPER_PATTERN_IDS.LEAVES, (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.rect(x - stemW, stemTop, stemW * 2, stemH);
+  });
+
+  const leaves = [
+    { ox: -leafRx * 0.7, oy: stemTop + stemH * 0.15, angle: -0.4 },
+    { ox: leafRx * 0.7, oy: stemTop + stemH * 0.35, angle: 0.4 },
+    { ox: 0, oy: stemTop - leafRy * 0.3, angle: 0 },
+  ];
+  for (let i = 0; i < leaves.length; i += 1) {
+    const leaf = leaves[i];
+    const lx = x + leaf.ox;
+    const ly = leaf.oy;
+    ctx.fillStyle = PAPER_SHADOW_COLOR;
+    ctx.beginPath();
+    ctx.ellipse(lx + shadowOffsetX, ly + shadowOffsetY, leafRx, leafRy, leaf.angle, 0, Math.PI * 2);
+    ctx.fill();
+    fillPaperShape(ctx, camera, color, PAPER_PATTERN_IDS.LEAVES, (drawCtx) => {
+      drawCtx.beginPath();
+      drawCtx.ellipse(lx, ly, leafRx, leafRy, leaf.angle, 0, Math.PI * 2);
+    });
+  }
 }
 
 function drawFallenLeaves(ctx, camera, worldLengthToScreen, x, y, color) {

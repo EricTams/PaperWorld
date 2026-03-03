@@ -43,6 +43,16 @@ export function drawItemIcon(ctx, itemDef, cx, cy, size) {
     drawWickerChestIcon(ctx, pattern, cx, cy, size, itemDef.color);
   } else if (itemDef.shape === "campfire") {
     drawCampfireIcon(ctx, pattern, cx, cy, size, itemDef.color);
+  } else if (itemDef.shape === "stone-knife") {
+    drawStoneKnifeIcon(ctx, pattern, cx, cy, size, itemDef.color);
+  } else if (itemDef.shape === "dried-herbs") {
+    drawDriedHerbsIcon(ctx, pattern, cx, cy, size, itemDef.color);
+  } else if (itemDef.shape === "herb-powder") {
+    drawHerbPowderIcon(ctx, pattern, cx, cy, size, itemDef.color);
+  } else if (itemDef.shape === "cauldron") {
+    drawCauldronIcon(ctx, pattern, cx, cy, size, itemDef.color);
+  } else if (itemDef.shape === "potion-flask") {
+    drawPotionFlaskIcon(ctx, pattern, cx, cy, size, itemDef.color);
   } else {
     drawFallbackIcon(ctx, cx, cy, size, itemDef.color);
   }
@@ -470,6 +480,178 @@ function fillFlamePath(ctx, cx, base, tip, width) {
   ctx.quadraticCurveTo(cx - half * 0.6, base - (base - tip) * 0.5, cx, tip);
   ctx.quadraticCurveTo(cx + half * 0.6, base - (base - tip) * 0.5, cx + half, base);
   ctx.closePath();
+}
+
+function drawStoneKnifeIcon(ctx, pattern, cx, cy, size, color) {
+  const bladeH = size * 0.38;
+  const bladeW = size * 0.22;
+  const handleH = size * 0.2;
+  const handleW = size * 0.08;
+  const bladeTop = cy - size * 0.22;
+  const bladeMid = bladeTop + bladeH;
+
+  ctx.fillStyle = SHADOW_COLOR;
+  ctx.beginPath();
+  ctx.moveTo(cx + SHADOW_OFFSET, bladeTop + SHADOW_OFFSET);
+  ctx.lineTo(cx + bladeW * 0.5 + SHADOW_OFFSET, bladeMid + SHADOW_OFFSET);
+  ctx.lineTo(cx - bladeW * 0.5 + SHADOW_OFFSET, bladeMid + SHADOW_OFFSET);
+  ctx.closePath();
+  ctx.fill();
+
+  fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.moveTo(cx, bladeTop);
+    drawCtx.lineTo(cx + bladeW * 0.5, bladeMid);
+    drawCtx.lineTo(cx - bladeW * 0.5, bladeMid);
+    drawCtx.closePath();
+  });
+
+  ctx.fillStyle = SHADOW_COLOR;
+  ctx.fillRect(cx - handleW * 0.5 + SHADOW_OFFSET, bladeMid + SHADOW_OFFSET, handleW, handleH);
+
+  fillPaperShape(ctx, UI_CAMERA, "#6b5a3a", PATTERN_FOR_ID["cut-wood"], (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.rect(cx - handleW * 0.5, bladeMid, handleW, handleH);
+  });
+}
+
+function drawDriedHerbsIcon(ctx, pattern, cx, cy, size, color) {
+  const stemH = size * 0.32;
+  const stemW = size * 0.04;
+  const leafRx = size * 0.16;
+  const leafRy = size * 0.08;
+  const stemTop = cy - stemH * 0.5;
+
+  ctx.fillStyle = SHADOW_COLOR;
+  ctx.fillRect(cx - stemW + SHADOW_OFFSET, stemTop + SHADOW_OFFSET, stemW * 2, stemH);
+
+  fillPaperShape(ctx, UI_CAMERA, "#6a5a2a", pattern, (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.rect(cx - stemW, stemTop, stemW * 2, stemH);
+  });
+
+  const leaves = [
+    { ox: -leafRx * 0.6, oy: stemTop + stemH * 0.2, angle: -0.5 },
+    { ox: leafRx * 0.6, oy: stemTop + stemH * 0.4, angle: 0.5 },
+    { ox: -leafRx * 0.3, oy: stemTop - leafRy * 0.2, angle: -0.15 },
+  ];
+  for (let i = 0; i < leaves.length; i += 1) {
+    const leaf = leaves[i];
+    const lx = cx + leaf.ox;
+    const ly = leaf.oy;
+    ctx.fillStyle = SHADOW_COLOR;
+    ctx.beginPath();
+    ctx.ellipse(lx + SHADOW_OFFSET, ly + SHADOW_OFFSET, leafRx, leafRy, leaf.angle, 0, Math.PI * 2);
+    ctx.fill();
+    fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+      drawCtx.beginPath();
+      drawCtx.ellipse(lx, ly, leafRx, leafRy, leaf.angle, 0, Math.PI * 2);
+    });
+  }
+}
+
+function drawHerbPowderIcon(ctx, pattern, cx, cy, size, color) {
+  const moundRx = size * 0.28;
+  const moundRy = size * 0.14;
+  const moundCy = cy + size * 0.06;
+
+  ctx.fillStyle = SHADOW_COLOR;
+  ctx.beginPath();
+  ctx.ellipse(cx + SHADOW_OFFSET, moundCy + SHADOW_OFFSET, moundRx, moundRy, 0, Math.PI, 0, true);
+  ctx.ellipse(cx + SHADOW_OFFSET, moundCy + SHADOW_OFFSET, moundRx, moundRy * 0.3, 0, 0, Math.PI, true);
+  ctx.fill();
+
+  fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.ellipse(cx, moundCy, moundRx, moundRy, 0, Math.PI, 0, true);
+    drawCtx.ellipse(cx, moundCy, moundRx, moundRy * 0.3, 0, 0, Math.PI, true);
+  });
+
+  const specks = [
+    { ox: -size * 0.16, oy: size * 0.1, r: size * 0.025 },
+    { ox: size * 0.18, oy: size * 0.11, r: size * 0.02 },
+    { ox: size * 0.1, oy: size * 0.05, r: size * 0.018 },
+  ];
+  for (let i = 0; i < specks.length; i += 1) {
+    const s = specks[i];
+    fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+      drawCtx.beginPath();
+      drawCtx.arc(cx + s.ox, cy + s.oy, s.r, 0, Math.PI * 2);
+    });
+  }
+}
+
+function drawCauldronIcon(ctx, pattern, cx, cy, size, color) {
+  const bodyRx = size * 0.32;
+  const bodyRy = size * 0.24;
+  const bodyTop = cy - size * 0.08;
+  const rimH = size * 0.06;
+  const legH = size * 0.12;
+  const legW = size * 0.05;
+
+  ctx.fillStyle = SHADOW_COLOR;
+  fillBowlPath(ctx, cx + SHADOW_OFFSET, bodyTop + SHADOW_OFFSET, bodyRx, bodyRy, bodyRy * 1.2);
+  ctx.fill();
+
+  fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+    fillBowlPath(drawCtx, cx, bodyTop, bodyRx, bodyRy, bodyRy * 1.2);
+  });
+
+  fillPaperShape(ctx, UI_CAMERA, "#4a4e56", pattern, (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.ellipse(cx, bodyTop, bodyRx, bodyRy * 0.35, 0, 0, Math.PI * 2);
+  });
+
+  const legSpacing = bodyRx * 0.6;
+  const legBaseY = bodyTop + bodyRy * 1.2;
+  const legs = [cx - legSpacing, cx, cx + legSpacing];
+  for (let i = 0; i < legs.length; i += 1) {
+    ctx.fillStyle = SHADOW_COLOR;
+    ctx.fillRect(legs[i] - legW * 0.5 + SHADOW_OFFSET, legBaseY + SHADOW_OFFSET, legW, legH);
+    fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+      drawCtx.beginPath();
+      drawCtx.rect(legs[i] - legW * 0.5, legBaseY, legW, legH);
+    });
+  }
+}
+
+function drawPotionFlaskIcon(ctx, pattern, cx, cy, size, color) {
+  const bodyRx = size * 0.2;
+  const bodyRy = size * 0.22;
+  const bodyCy = cy + size * 0.08;
+  const neckW = size * 0.08;
+  const neckH = size * 0.18;
+  const neckTop = bodyCy - bodyRy - neckH + size * 0.02;
+  const corkH = size * 0.06;
+  const corkW = size * 0.1;
+
+  ctx.fillStyle = SHADOW_COLOR;
+  ctx.beginPath();
+  ctx.ellipse(cx + SHADOW_OFFSET, bodyCy + SHADOW_OFFSET, bodyRx, bodyRy, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.ellipse(cx, bodyCy, bodyRx, bodyRy, 0, 0, Math.PI * 2);
+  });
+
+  ctx.fillStyle = SHADOW_COLOR;
+  ctx.fillRect(cx - neckW * 0.5 + SHADOW_OFFSET, neckTop + SHADOW_OFFSET, neckW, neckH);
+
+  fillPaperShape(ctx, UI_CAMERA, color, pattern, (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.rect(cx - neckW * 0.5, neckTop, neckW, neckH);
+  });
+
+  fillPaperShape(ctx, UI_CAMERA, "#8a6a3a", PATTERN_FOR_ID["cut-wood"], (drawCtx) => {
+    drawCtx.beginPath();
+    drawCtx.rect(cx - corkW * 0.5, neckTop - corkH + size * 0.02, corkW, corkH);
+  });
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
+  ctx.beginPath();
+  ctx.ellipse(cx - bodyRx * 0.3, bodyCy - bodyRy * 0.25, bodyRx * 0.18, bodyRy * 0.3, -0.3, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawFallbackIcon(ctx, cx, cy, size, color) {

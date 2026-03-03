@@ -73,6 +73,46 @@ export function drawInteractionTooltip(ctx, camera, object) {
   ctx.restore();
 }
 
+export function drawDecorPickupTooltip(ctx, camera, pickupTarget) {
+  const { instance, decorDef } = pickupTarget;
+  const screen = worldToScreen(camera, instance.x, instance.y);
+  const screenRadius = worldLengthToScreen(camera, decorDef.footprint.radius);
+  const anchorY = screen.y - screenRadius - TOOLTIP_OFFSET_Y;
+
+  ctx.save();
+
+  ctx.font = TOOLTIP_KEY_FONT;
+  const keyText = "E";
+  const keyMetrics = ctx.measureText(keyText);
+  const keyW = keyMetrics.width + TOOLTIP_PADDING_X * 2;
+  const keyH = 18 + TOOLTIP_PADDING_Y * 2;
+
+  ctx.font = TOOLTIP_NAME_FONT;
+  const nameText = decorDef.pickup.label;
+  const nameMetrics = ctx.measureText(nameText);
+  const nameW = nameMetrics.width + TOOLTIP_PADDING_X * 2;
+  const nameH = 14 + TOOLTIP_PADDING_Y * 2;
+
+  const nameY = anchorY;
+  const keyY = nameY - TOOLTIP_GAP - keyH;
+
+  drawRoundedBadge(ctx, screen.x, keyY, keyW, keyH, TOOLTIP_BG, TOOLTIP_BORDER);
+  ctx.fillStyle = TOOLTIP_KEY_COLOR;
+  ctx.font = TOOLTIP_KEY_FONT;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(keyText, screen.x, keyY + keyH * 0.5);
+
+  drawRoundedBadge(ctx, screen.x, nameY, nameW, nameH, TOOLTIP_BG, null);
+  ctx.fillStyle = TOOLTIP_NAME_COLOR;
+  ctx.font = TOOLTIP_NAME_FONT;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(nameText, screen.x, nameY + nameH * 0.5);
+
+  ctx.restore();
+}
+
 function drawRoundedBadge(ctx, cx, top, width, height, fillColor, strokeColor) {
   const left = cx - width * 0.5;
   const r = Math.min(TOOLTIP_CORNER_RADIUS, width * 0.5, height * 0.5);

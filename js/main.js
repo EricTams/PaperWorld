@@ -31,7 +31,7 @@ import {
   setCameraZoom,
   screenToWorld,
 } from "./render/camera.js";
-import { invalidateAllChunkCanvases } from "./render/chunk-canvas-cache.js";
+import { invalidateAllChunkCanvases, invalidateChunkCanvases } from "./render/chunk-canvas-cache.js";
 import {
   createDebugHudState,
   drawDebugHud,
@@ -51,13 +51,14 @@ import { createInventory, addItem, removeItem, removeItemById, getSlot, PLAYER_S
 import { getItemDef } from "./items/item-defs.js";
 import { drawHotbar } from "./render/ui/hotbar.js";
 import { drawInventoryPanel, hitTestInventorySlot } from "./render/ui/inventory-panel.js";
-import { POCKET_RECIPES, MORTAR_RECIPES, DRYING_RACK_RECIPES, GRIMOIRE_RECIPES } from "./items/recipe-defs.js";
+import { POCKET_RECIPES, MORTAR_RECIPES, DRYING_RACK_RECIPES, GRIMOIRE_RECIPES, MAGIC_CIRCLE_RECIPES, CAMPFIRE_RECIPES, CAULDRON_RECIPES } from "./items/recipe-defs.js";
 import { doCraft, canCraft } from "./items/crafting.js";
 import { hitTestCraftingPanel } from "./render/ui/crafting-panel.js";
 import { createPlacedObjectStore, addPlacedObject, getPlacedObjectColliders, snapToPlaceGrid } from "./world/placed-objects.js";
 import { drawPlacedObjects, drawPlacementIndicator } from "./render/layers/placed-object-layer.js";
 import { findHoveredObject, findInteractableObject } from "./sim/interaction.js";
-import { drawHoverHighlight, drawInteractionTooltip } from "./render/ui/interaction-indicator.js";
+import { drawHoverHighlight, drawInteractionTooltip, drawDecorPickupTooltip } from "./render/ui/interaction-indicator.js";
+import { findPickupableDecor, removeDecorInstance } from "./sim/decor-pickup.js";
 import { drawGrimoireHint } from "./render/ui/grimoire-hint.js";
 
 const FIXED_DT_SECONDS = 1 / 60;
@@ -125,7 +126,7 @@ function createGameState() {
     panelLayout: null,
     placeMode: { active: false, itemId: null },
     placedObjects: createPlacedObjectStore(),
-    interaction: { hoveredObject: null, interactableObject: null },
+    interaction: { hoveredObject: null, interactableObject: null, pickupableDecor: null },
     activeRecipes: null,
     craftingLabel: null,
     hasGrimoire: false,
@@ -312,6 +313,8 @@ function render(state) {
   }
   if (state.interaction.interactableObject) {
     drawInteractionTooltip(state.ctx, state.camera, state.interaction.interactableObject);
+  } else if (state.interaction.pickupableDecor) {
+    drawDecorPickupTooltip(state.ctx, state.camera, state.interaction.pickupableDecor);
   }
   if (state.placeMode.active) {
     const mouseWorld = screenToWorld(state.camera, state.input.mouseX, state.input.mouseY);
@@ -548,29 +551,59 @@ function updateInteractionTargets(state) {
   const mouseWorld = screenToWorld(state.camera, state.input.mouseX, state.input.mouseY);
   state.interaction.hoveredObject = findHoveredObject(mouseWorld.x, mouseWorld.y, state.placedObjects);
   state.interaction.interactableObject = findInteractableObject(state.player, state.placedObjects);
+  state.interaction.pickupableDecor = state.interaction.interactableObject
+    ? null
+    : findPickupableDecor(state.player, state.world.loadedChunks, state.inventory);
 }
 
 function handleInteraction(state) {
   const target = state.interaction.interactableObject;
-  if (!target) {
+  if (target) {
+    const def = getItemDef(target.itemId);
+    if (def.useAction === "container" && target.container) {
+      state.openContainer = target.container;
+      state.activeRecipes = getPocketRecipes(state);
+      state.inventoryOpen = true;
+    } else if (def.useAction === "station-mortar") {
+      state.activeRecipes = MORTAR_RECIPES;
+      state.craftingLabel = "Mortar and Pestle";
+      state.inventoryOpen = true;
+    } else if (def.useAction === "station-drying-rack") {
+      state.activeRecipes = DRYING_RACK_RECIPES;
+      state.craftingLabel = "Drying Rack";
+      state.inventoryOpen = true;
+    } else if (def.useAction === "station-magic-circle") {
+      state.activeRecipes = MAGIC_CIRCLE_RECIPES;
+      state.craftingLabel = "Magic Circle";
+      state.inventoryOpen = true;
+    } else if (def.useAction === "station-campfire") {
+      state.activeRecipes = CAMPFIRE_RECIPES;
+      state.craftingLabel = "Campfire";
+      state.inventoryOpen = true;
+    } else if (def.useAction === "station-cauldron") {
+      state.activeRecipes = CAULDRON_RECIPES;
+      state.craftingLabel = "Cauldron";
+      state.inventoryOpen = true;
+    }
     return;
   }
-  const def = getItemDef(target.itemId);
-  if (def.useAction === "container" && target.container) {
-    state.openContainer = target.container;
-    state.activeRecipes = getPocketRecipes(state);
-    state.inventoryOpen = true;
-  } else if (def.useAction === "station-mortar") {
-    state.activeRecipes = MORTAR_RECIPES;
-    state.craftingLabel = "Mortar and Pestle";
-    state.inventoryOpen = true;
-  } else if (def.useAction === "station-drying-rack") {
-    state.activeRecipes = DRYING_RACK_RECIPES;
-    state.craftingLabel = "Drying Rack";
-    state.inventoryOpen = true;
-  } else {
-    console.log(`AIDEV-NOTE: Station interaction stub for "${def.useAction}" on "${def.name}"`);
+
+  const pickup = state.interaction.pickupableDecor;
+  if (pickup) {
+    handleDecorPickup(state, pickup);
   }
+}
+
+function handleDecorPickup(state, pickup) {
+  const { instance, decorDef, chunk } = pickup;
+  const { itemId, count } = decorDef.pickup;
+  const remaining = addItem(state.inventory, itemId, count);
+  if (remaining > 0) {
+    return;
+  }
+  removeDecorInstance(chunk, instance);
+  invalidateChunkCanvases(chunk);
+  state.interaction.pickupableDecor = null;
 }
 
 function getPocketRecipes(state) {
