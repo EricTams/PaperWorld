@@ -17,6 +17,7 @@ export function createInputState() {
     cancelPlaceRequested: false,
     interactRequested: false,
     toggleGrimoireRequested: false,
+    rightClickRequested: false,
   };
 }
 
@@ -80,6 +81,13 @@ export function attachInputListeners(inputState, eventTarget = window) {
       inputState.mouseClickX = event.clientX;
       inputState.mouseClickY = event.clientY;
     }
+    if (event.button === 2) {
+      inputState.rightClickRequested = true;
+    }
+  });
+
+  eventTarget.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
   });
 
   eventTarget.addEventListener("mouseup", (event) => {
@@ -176,6 +184,12 @@ export function consumeMouseRelease(inputState) {
     return null;
   }
   return { x, y };
+}
+
+export function consumeRightClick(inputState) {
+  const requested = inputState.rightClickRequested;
+  inputState.rightClickRequested = false;
+  return requested;
 }
 
 function axisFromKeys(heldKeys, negativeKeys, positiveKeys) {

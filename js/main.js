@@ -13,14 +13,19 @@ import {
   consumeCancelPlace,
   consumeInteract,
   consumeGrimoireToggle,
+  consumeRightClick,
   readMovementAxis,
 } from "./input/input-state.js";
 import {
   createPlayer,
   updatePlayerMovement,
   updatePlayerAnimation,
+  startAttack,
+  updateAttack,
   drawPlayer,
 } from "./entities/player.js";
+import { resolveAttackHits } from "./sim/combat.js";
+import { drawAttack } from "./render/layers/attack-layer.js";
 import { loadAtlas } from "./render/sprite/atlas-loader.js";
 import {
   createCamera,
@@ -237,6 +242,11 @@ function readInput(state) {
       state.craftingLabel = null;
     }
   }
+  if (consumeRightClick(state.input)) {
+    state.hotbarSelection = -1;
+    state.placeMode.active = false;
+  }
+
   const hotbarSlot = consumeHotbarSlot(state.input);
   if (hotbarSlot >= 0) {
     if (hotbarSlot === state.hotbarSelection && state.placeMode.active) {
@@ -264,6 +274,8 @@ function readInput(state) {
 
   if (state.placeMode.active && press) {
     handlePlaceModeClick(state, press);
+  } else if (press && !state.player.attack.active) {
+    handleAttackClick(state);
   }
 
   const axis = readMovementAxis(state.input);
@@ -287,6 +299,8 @@ function simulate(state, axis, dtSeconds) {
   const placedColliders = getPlacedObjectColliders(state.placedObjects);
   resolvePlayerBlockingCollision(state.player, previousPosition, state.world.loadedChunks, placedColliders);
   updatePlayerAnimation(state.player, axis, dtSeconds);
+  updateAttack(state.player, dtSeconds);
+  resolveAttackHits(state.player, state.enemySpawner.enemies);
   updateCameraFollow(state.camera, state.player.x, state.player.y);
   updateEnemySpawner(state.enemySpawner, state.camera, state.player, state.world.loadedChunks, dtSeconds);
   updateWorldStreaming(state);
@@ -306,6 +320,7 @@ function render(state) {
   }
   drawEnemies(state.ctx, state.camera, state.enemySpawner, worldToScreen, worldLengthToScreen, state.enemyAtlas);
   drawPlayer(state.ctx, state.camera, state.player, worldToScreen, worldLengthToScreen, state.playerAtlas);
+  drawAttack(state.ctx, state.camera, state.player, worldToScreen, worldLengthToScreen);
   drawDecorBlockingLayer(state.ctx, state.camera, state.world.loadedChunks, state.world.chunkSize);
   drawPlacedObjects(state.ctx, state.camera, state.placedObjects);
   if (state.interaction.hoveredObject) {
@@ -499,6 +514,10 @@ function handleInventoryRelease(state, release) {
 }
 
 function tryEnterPlaceMode(state) {
+  if (state.hotbarSelection < 0) {
+    state.placeMode.active = false;
+    return;
+  }
   const slotIndex = HOTBAR_START_INDEX + state.hotbarSelection;
   const slot = getSlot(state.inventory, slotIndex);
   if (!slot) {
@@ -530,6 +549,27 @@ function handlePlaceModeClick(state, press) {
   addPlacedObject(state.placedObjects, state.placeMode.itemId, snapped.x, snapped.y);
   removeItem(state.inventory, slotIndex, 1);
   state.placeMode.active = false;
+}
+
+function handleAttackClick(state) {
+  let type = "swipe";
+  let damage = 1;
+  let range = 30;
+
+  if (state.hotbarSelection >= 0) {
+    const slotIndex = HOTBAR_START_INDEX + state.hotbarSelection;
+    const slot = getSlot(state.inventory, slotIndex);
+    if (slot) {
+      const def = getItemDef(slot.itemId);
+      if (def.weapon) {
+        type = def.attackShape || "swipe";
+        damage = def.damage || 1;
+        range = def.attackRange || 30;
+      }
+    }
+  }
+
+  startAttack(state.player, type, damage, range);
 }
 
 function isPlacementValid(state, worldX, worldY, radius) {

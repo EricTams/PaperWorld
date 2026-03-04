@@ -8,11 +8,13 @@ const SPAWN_COOLDOWN = 2;
 const SPAWN_BAND_MIN = 50;
 const SPAWN_BAND_MAX = 200;
 const DESPAWN_DISTANCE = 400;
+const POOF_DURATION = 0.3;
 
 export function createEnemySpawner() {
   return {
     enemies: [],
     spawnTimer: 0,
+    poofs: [],
   };
 }
 
@@ -38,12 +40,16 @@ export function updateEnemySpawner(spawner, camera, player, loadedChunks, dtSeco
   for (const enemy of spawner.enemies) {
     updateEnemy(enemy, dtSeconds, colliders);
   }
+
+  collectDeadEnemies(spawner);
+  updatePoofs(spawner, dtSeconds);
 }
 
 export function drawEnemies(ctx, camera, spawner, worldToScreen, worldLengthToScreen, atlas) {
   for (const enemy of spawner.enemies) {
     drawEnemy(ctx, camera, enemy, worldToScreen, worldLengthToScreen, atlas);
   }
+  drawPoofs(ctx, camera, spawner, worldToScreen, worldLengthToScreen);
 }
 
 function despawnFarAway(spawner, bounds) {
@@ -78,6 +84,46 @@ function randomBandPosition(bounds) {
       return { x: bounds.minX - bandOffset, y: lerp(bounds.minY, bounds.maxY) };
     default:
       return { x: bounds.maxX + bandOffset, y: lerp(bounds.minY, bounds.maxY) };
+  }
+}
+
+function collectDeadEnemies(spawner) {
+  for (let i = spawner.enemies.length - 1; i >= 0; i--) {
+    const enemy = spawner.enemies[i];
+    if (enemy.dead) {
+      spawner.poofs.push({ x: enemy.x, y: enemy.y, timer: POOF_DURATION });
+      spawner.enemies.splice(i, 1);
+    }
+  }
+}
+
+function updatePoofs(spawner, dtSeconds) {
+  for (let i = spawner.poofs.length - 1; i >= 0; i--) {
+    spawner.poofs[i].timer -= dtSeconds;
+    if (spawner.poofs[i].timer <= 0) {
+      spawner.poofs.splice(i, 1);
+    }
+  }
+}
+
+function drawPoofs(ctx, camera, spawner, worldToScreen, worldLengthToScreen) {
+  for (const poof of spawner.poofs) {
+    const progress = 1 - poof.timer / POOF_DURATION;
+    const worldRadius = 10 + progress * 16;
+    const alpha = 1 - progress;
+    const center = worldToScreen(camera, poof.x, poof.y);
+    const screenRadius = worldLengthToScreen(camera, worldRadius);
+
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, screenRadius, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 255, 255, ${(alpha * 0.6).toFixed(2)})`;
+    ctx.fill();
+
+    const innerRadius = screenRadius * 0.5;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, innerRadius, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(230, 220, 200, ${(alpha * 0.4).toFixed(2)})`;
+    ctx.fill();
   }
 }
 

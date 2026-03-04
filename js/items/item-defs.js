@@ -122,6 +122,10 @@ const ITEM_DEFS = Object.freeze([
     shape: "stone-knife",
     color: "#7a7e86",
     patternId: "rough-stone",
+    weapon: true,
+    damage: 2,
+    attackRange: 38,
+    attackShape: "stab",
   },
   {
     id: "dried-herbs",

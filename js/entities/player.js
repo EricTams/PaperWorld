@@ -2,6 +2,8 @@ import { createAnimationState, updateAnimation, getCurrentFrame } from "../rende
 import { PLAYER_ANIMATIONS } from "../render/sprite/animation-defs.js";
 import { drawSprite } from "../render/sprite/sprite-renderer.js";
 
+const ATTACK_DURATION = 0.2;
+
 export function createPlayer(startX, startY) {
   return {
     x: startX,
@@ -11,10 +13,23 @@ export function createPlayer(startX, startY) {
     speed: 132,
     facing: { x: 1, y: 0 },
     anim: createAnimationState(),
+    attack: {
+      active: false,
+      timer: 0,
+      duration: ATTACK_DURATION,
+      type: "swipe",
+      damage: 1,
+      range: 30,
+      direction: { x: 1, y: 0 },
+      hitApplied: false,
+    },
   };
 }
 
 export function updatePlayerMovement(player, inputAxis, dtSeconds) {
+  if (player.attack.active) {
+    return;
+  }
   const move = normalizeAxis(inputAxis);
   player.x += move.x * player.speed * dtSeconds;
   player.y += move.y * player.speed * dtSeconds;
@@ -53,6 +68,31 @@ export function drawPlayer(ctx, camera, player, worldToScreen, worldLengthToScre
   const size = worldLengthToScreen(camera, worldSize);
   ctx.fillStyle = "#d64545";
   ctx.fillRect(topLeft.x, topLeft.y, size, size);
+}
+
+export function startAttack(player, type, damage, range) {
+  if (player.attack.active) {
+    return;
+  }
+  player.attack.active = true;
+  player.attack.timer = 0;
+  player.attack.duration = ATTACK_DURATION;
+  player.attack.type = type;
+  player.attack.damage = damage;
+  player.attack.range = range;
+  player.attack.direction = { x: player.facing.x, y: player.facing.y };
+  player.attack.hitApplied = false;
+}
+
+export function updateAttack(player, dtSeconds) {
+  if (!player.attack.active) {
+    return;
+  }
+  player.attack.timer += dtSeconds;
+  if (player.attack.timer >= player.attack.duration) {
+    player.attack.active = false;
+    player.attack.timer = 0;
+  }
 }
 
 function resolvePlayerAnimation(inputAxis) {
