@@ -5,6 +5,11 @@ body {
   height: 100%;
   overflow: hidden;
   background: #111;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  position: fixed;
 }
 
 #game-canvas {

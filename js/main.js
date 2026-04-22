@@ -16,6 +16,15 @@ import {
   consumeRightClick,
   readMovementAxis,
 } from "./input/input-state.js";
+import { isTouchDevice } from "./input/touch-detect.js";
+import {
+  createVirtualGamepad,
+  attachTouchListeners,
+  layoutGamepad,
+  consumeButtonPress,
+  readDpadAxis,
+  drawVirtualGamepad,
+} from "./input/virtual-gamepad.js";
 import {
   createPlayer,
   updatePlayerMovement,
@@ -135,11 +144,18 @@ function createGameState() {
     activeRecipes: null,
     craftingLabel: null,
     hasGrimoire: false,
+    touchActive: false,
+    gamepad: createVirtualGamepad(),
   };
 }
 
 function initGame(state) {
   attachInputListeners(state.input, window);
+  state.touchActive = isTouchDevice();
+  if (state.touchActive) {
+    attachTouchListeners(state.gamepad, state.canvas, state.input);
+    tryLockLandscape();
+  }
   setCameraZoom(state.camera, CAMERA_ZOOM_CLOSE);
   updateCameraFollow(state.camera, state.player.x, state.player.y);
   updateWorldStreaming(state);
@@ -159,10 +175,19 @@ function initGame(state) {
 }
 
 function resizeCanvas(state) {
-  state.canvas.width = window.innerWidth;
-  state.canvas.height = window.innerHeight;
-  resizeCamera(state.camera, state.canvas.width, state.canvas.height);
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = window.innerWidth;
+  const cssH = window.innerHeight;
+  state.canvas.width = cssW * dpr;
+  state.canvas.height = cssH * dpr;
+  state.canvas.style.width = cssW + "px";
+  state.canvas.style.height = cssH + "px";
+  state.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  resizeCamera(state.camera, cssW, cssH);
   invalidateAllChunkCanvases(state.world.loadedChunks);
+  if (state.touchActive) {
+    layoutGamepad(state.gamepad, cssW, cssH);
+  }
 }
 
 function frameLoop(state, frameMs) {
@@ -260,7 +285,25 @@ function readInput(state) {
   const press = consumeMouseClick(state.input);
   const release = consumeMouseRelease(state.input);
 
-  const interactPressed = consumeInteract(state.input);
+  const interactPressed = consumeInteract(state.input) ||
+    (state.touchActive && consumeButtonPress(state.gamepad, "interact"));
+
+  if (state.touchActive && consumeButtonPress(state.gamepad, "inventory")) {
+    state.inventoryOpen = !state.inventoryOpen;
+    state.placeMode.active = false;
+    if (state.inventoryOpen) {
+      state.activeRecipes = getPocketRecipes(state);
+      state.craftingLabel = null;
+    } else {
+      returnHeldItem(state);
+      state.openContainer = null;
+      state.panelLayout = null;
+      state.activeRecipes = null;
+      state.craftingLabel = null;
+    }
+  }
+
+  const attackPressed = state.touchActive && consumeButtonPress(state.gamepad, "attack");
 
   if (state.inventoryOpen) {
     handleInventoryPress(state, press);
@@ -274,13 +317,22 @@ function readInput(state) {
 
   if (state.placeMode.active && press) {
     handlePlaceModeClick(state, press);
-  } else if (press && !state.player.attack.active) {
+  } else if ((press || attackPressed) && !state.player.attack.active) {
     handleAttackClick(state);
   }
 
-  const axis = readMovementAxis(state.input);
+  const kbAxis = readMovementAxis(state.input);
+  const axis = state.touchActive
+    ? mergeAxes(kbAxis, readDpadAxis(state.gamepad))
+    : kbAxis;
   logMovementAxis(state, axis);
   return axis;
+}
+
+function mergeAxes(a, b) {
+  const x = Math.abs(a.x) > Math.abs(b.x) ? a.x : b.x;
+  const y = Math.abs(a.y) > Math.abs(b.y) ? a.y : b.y;
+  return { x, y };
 }
 
 function logMovementAxis(state, axis) {
@@ -350,16 +402,16 @@ function render(state) {
       placedColliders
     );
   }
-  drawHotbar(state.ctx, state.canvas.width, state.canvas.height, state.inventory, state.hotbarSelection);
+  drawHotbar(state.ctx, state.camera.viewWidth, state.camera.viewHeight, state.inventory, state.hotbarSelection);
   if (state.hasGrimoire) {
-    drawGrimoireHint(state.ctx, state.canvas.width, state.canvas.height);
+    drawGrimoireHint(state.ctx, state.camera.viewWidth, state.camera.viewHeight);
   }
   if (state.inventoryOpen) {
     const containerInv = state.openContainer ? state.openContainer.inventory : null;
     state.panelLayout = drawInventoryPanel(
       state.ctx,
-      state.canvas.width,
-      state.canvas.height,
+      state.camera.viewWidth,
+      state.camera.viewHeight,
       state.inventory,
       state.hotbarSelection,
       containerInv,
@@ -372,13 +424,16 @@ function render(state) {
   } else {
     state.panelLayout = null;
   }
+  if (state.touchActive) {
+    drawVirtualGamepad(state.ctx, state.gamepad);
+  }
   updateHud(state);
   drawDebugHud(state.ctx, state.debugHud);
 }
 
 function clearFrame(state) {
   state.ctx.fillStyle = "#1b1e28";
-  state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
+  state.ctx.fillRect(0, 0, state.camera.viewWidth, state.camera.viewHeight);
 }
 
 function updateHud(state) {
@@ -651,6 +706,13 @@ function getPocketRecipes(state) {
     return POCKET_RECIPES.filter((r) => r.output.itemId !== "grimoire");
   }
   return POCKET_RECIPES;
+}
+
+function tryLockLandscape() {
+  const orientation = screen.orientation;
+  if (orientation && typeof orientation.lock === "function") {
+    orientation.lock("landscape").catch(() => {});
+  }
 }
 
 function updateFps(state, frameSeconds) {
