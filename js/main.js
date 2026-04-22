@@ -153,6 +153,7 @@ function initGame(state) {
   attachInputListeners(state.input, window);
   state.touchActive = isTouchDevice();
   if (state.touchActive) {
+    document.documentElement.classList.add("touch-device");
     attachTouchListeners(state.gamepad, state.canvas, state.input);
     tryLockLandscape();
   }
@@ -162,6 +163,9 @@ function initGame(state) {
   validateBiomeDefinitionCount();
   resizeCanvas(state);
   window.addEventListener("resize", () => resizeCanvas(state));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => resizeCanvas(state));
+  }
   loadAtlas("assets/player/alienPink.xml", "assets/player/alienPink.png").then((atlas) => {
     state.playerAtlas = atlas;
   });
@@ -176,8 +180,9 @@ function initGame(state) {
 
 function resizeCanvas(state) {
   const dpr = window.devicePixelRatio || 1;
-  const cssW = window.innerWidth;
-  const cssH = window.innerHeight;
+  const vp = window.visualViewport;
+  const cssW = vp ? vp.width : window.innerWidth;
+  const cssH = vp ? vp.height : window.innerHeight;
   state.canvas.width = cssW * dpr;
   state.canvas.height = cssH * dpr;
   state.canvas.style.width = cssW + "px";
@@ -186,7 +191,8 @@ function resizeCanvas(state) {
   resizeCamera(state.camera, cssW, cssH);
   invalidateAllChunkCanvases(state.world.loadedChunks);
   if (state.touchActive) {
-    layoutGamepad(state.gamepad, cssW, cssH);
+    const insets = getSafeAreaInsets();
+    layoutGamepad(state.gamepad, cssW, cssH, insets);
   }
 }
 
@@ -713,6 +719,17 @@ function tryLockLandscape() {
   if (orientation && typeof orientation.lock === "function") {
     orientation.lock("landscape").catch(() => {});
   }
+}
+
+function getSafeAreaInsets() {
+  const style = getComputedStyle(document.documentElement);
+  const get = (prop) => parseFloat(style.getPropertyValue(prop)) || 0;
+  return {
+    top: get("--sai-top"),
+    right: get("--sai-right"),
+    bottom: get("--sai-bottom"),
+    left: get("--sai-left"),
+  };
 }
 
 function updateFps(state, frameSeconds) {

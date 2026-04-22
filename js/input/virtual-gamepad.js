@@ -41,16 +41,20 @@ const BUTTON_DEFS = [
   { id: "inventory", label: "BAG" },
 ];
 
-export function layoutGamepad(gamepad, canvasWidth, canvasHeight) {
-  const dpadCx = DPAD_MARGIN_X + DPAD_RADIUS;
-  const dpadCy = canvasHeight - DPAD_MARGIN_Y - DPAD_RADIUS;
+export function layoutGamepad(gamepad, canvasWidth, canvasHeight, insets) {
+  const safeLeft = (insets && insets.left) || 0;
+  const safeRight = (insets && insets.right) || 0;
+  const safeBottom = (insets && insets.bottom) || 0;
+
+  const dpadCx = safeLeft + DPAD_MARGIN_X + DPAD_RADIUS;
+  const dpadCy = canvasHeight - safeBottom - DPAD_MARGIN_Y - DPAD_RADIUS;
   gamepad.dpad.cx = dpadCx;
   gamepad.dpad.cy = dpadCy;
 
   const btnCount = BUTTON_DEFS.length;
   const totalBtnHeight = btnCount * (BTN_RADIUS * 2) + (btnCount - 1) * BTN_GAP;
-  const btnBaseX = canvasWidth - BTN_MARGIN_X - BTN_RADIUS;
-  const btnBaseY = canvasHeight - BTN_MARGIN_Y - totalBtnHeight + BTN_RADIUS;
+  const btnBaseX = canvasWidth - safeRight - BTN_MARGIN_X - BTN_RADIUS;
+  const btnBaseY = canvasHeight - safeBottom - BTN_MARGIN_Y - totalBtnHeight + BTN_RADIUS;
 
   gamepad.buttons = BUTTON_DEFS.map((def, i) => ({
     id: def.id,

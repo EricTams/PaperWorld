@@ -1,6 +1,14 @@
+:root {
+  --sai-top: env(safe-area-inset-top, 0px);
+  --sai-right: env(safe-area-inset-right, 0px);
+  --sai-bottom: env(safe-area-inset-bottom, 0px);
+  --sai-left: env(safe-area-inset-left, 0px);
+}
+
 html,
 body {
   margin: 0;
+  padding: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -10,10 +18,51 @@ body {
   -webkit-user-select: none;
   user-select: none;
   position: fixed;
+  top: 0;
+  left: 0;
 }
 
 #game-canvas {
   display: block;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+}
+
+#rotate-prompt {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #111;
+  color: #ccc;
+  font-family: sans-serif;
+}
+
+.rotate-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 24px;
+}
+
+.rotate-icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+}
+
+.rotate-content p {
+  font-size: 18px;
+  margin: 0;
+}
+
+@media (orientation: portrait) {
+  .touch-device #rotate-prompt {
+    display: block;
+  }
+  .touch-device #game-canvas {
+    display: none;
+  }
 }
