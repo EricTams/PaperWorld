@@ -79,6 +79,8 @@ const FIXED_DT_SECONDS = 1 / 60;
 const MAX_FRAME_SECONDS = 0.25;
 const CAMERA_ZOOM_CLOSE = 2.5;
 const CAMERA_ZOOM_FAR = 1;
+const MOBILE_ZOOM_CLOSE = 1.4;
+const MOBILE_ZOOM_FAR = 0.8;
 const EVICT_BUFFER_CHUNKS = 2;
 const BASE_WORLD_SEED = "phase2-seed";
 
@@ -157,7 +159,8 @@ function initGame(state) {
     attachTouchListeners(state.gamepad, state.canvas, state.input);
     tryLockLandscape();
   }
-  setCameraZoom(state.camera, CAMERA_ZOOM_CLOSE);
+  const startZoom = state.touchActive ? MOBILE_ZOOM_CLOSE : CAMERA_ZOOM_CLOSE;
+  setCameraZoom(state.camera, startZoom);
   updateCameraFollow(state.camera, state.player.x, state.player.y);
   updateWorldStreaming(state);
   validateBiomeDefinitionCount();
@@ -235,7 +238,9 @@ function readInput(state) {
     cycleBiomeSeed(state);
   }
   if (consumeZoomToggle(state.input)) {
-    const nextZoom = state.camera.zoom === CAMERA_ZOOM_CLOSE ? CAMERA_ZOOM_FAR : CAMERA_ZOOM_CLOSE;
+    const close = state.touchActive ? MOBILE_ZOOM_CLOSE : CAMERA_ZOOM_CLOSE;
+    const far = state.touchActive ? MOBILE_ZOOM_FAR : CAMERA_ZOOM_FAR;
+    const nextZoom = state.camera.zoom === close ? far : close;
     setCameraZoom(state.camera, nextZoom);
   }
   if (consumeCancelPlace(state.input)) {
