@@ -189,13 +189,17 @@ export function readDpadAxis(gamepad) {
   return { x: gamepad.dpad.ax, y: gamepad.dpad.ay };
 }
 
-export function drawVirtualGamepad(ctx, gamepad) {
+export function drawVirtualGamepad(ctx, gamepad, onlyButtonId) {
   if (!gamepad.active) {
     return;
   }
-  drawDpad(ctx, gamepad.dpad);
+  if (!onlyButtonId) {
+    drawDpad(ctx, gamepad.dpad);
+  }
   for (const btn of gamepad.buttons) {
-    drawButton(ctx, btn);
+    if (!onlyButtonId || btn.id === onlyButtonId) {
+      drawButton(ctx, btn);
+    }
   }
 }
 

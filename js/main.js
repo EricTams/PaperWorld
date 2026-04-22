@@ -433,7 +433,8 @@ function render(state) {
     state.panelLayout = null;
   }
   if (state.touchActive) {
-    drawVirtualGamepad(state.ctx, state.gamepad);
+    const onlyBtn = state.inventoryOpen ? "inventory" : null;
+    drawVirtualGamepad(state.ctx, state.gamepad, onlyBtn);
   }
   updateHud(state);
   drawDebugHud(state.ctx, state.debugHud);
